@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: fintech-onboarding-backend
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python run.py
+    autoDeploy: true
+    envVars:
+      - key: DATABASE_URL
+      - key: SECRET_KEY
+      - key: APP_HOST
+        value: "0.0.0.0"
+      - key: APP_PORT
+        value: "8000"
+      - key: APP_RELOAD
+        value: "false"
