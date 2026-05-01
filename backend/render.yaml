@@ -2,7 +2,7 @@ services:
   - type: web
     name: fintech-onboarding-backend
     env: python
-    pythonVersion: 3.13.12
+    pythonVersion: 3.14.3
     region: oregon
     plan: free
     buildCommand: pip install -r requirements.txt
@@ -16,3 +16,7 @@ services:
         value: "8000"
       - key: APP_RELOAD
         value: "false"
+      - key: CARGO_HOME
+        value: "/tmp/cargo"
+      - key: CARGO_TARGET_DIR
+        value: "/tmp/cargo-target"
