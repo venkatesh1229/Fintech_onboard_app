@@ -9,11 +9,10 @@
 # ============================================================
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.orm import Session
 from typing import Optional, List
-from app.database import get_db
-from app import models, schemas
+from app import schemas
 from app.dependencies import get_current_admin
+from app.storage import list_applications, get_application_by_id, update_application
 
 router = APIRouter()
 
@@ -28,30 +27,13 @@ def get_all_applications(
     search: Optional[str]  = Query(None, description="Search by business name or email"),
     skip:   int            = Query(0,    description="Pagination offset"),
     limit:  int            = Query(20,   description="Results per page"),
-    db:     Session        = Depends(get_db),
-    _:      models.AdminUser = Depends(get_current_admin)  # Requires admin JWT
+    _:      dict           = Depends(get_current_admin)
 ):
     """
     Admin views all merchant applications.
     Supports optional filtering by status and search by business name/email.
     """
-    # Start with base query joining application + merchant
-    query = db.query(models.MerchantApplication)\
-              .join(models.User)
-
-    # Apply status filter if provided
-    if status:
-        query = query.filter(models.MerchantApplication.status == status)
-
-    # Apply search filter across business name and email
-    if search:
-        query = query.filter(
-            models.User.business_name.contains(search) |
-            models.User.email.contains(search)
-        )
-
-    # Paginate and return
-    return query.offset(skip).limit(limit).all()
+    return list_applications(status=status, search=search, skip=skip, limit=limit)
 
 
 # ============================================================
@@ -61,20 +43,15 @@ def get_all_applications(
 @router.get("/applications/{app_id}", response_model=schemas.ApplicationResponse)
 def get_application_detail(
     app_id: int,
-    db:     Session          = Depends(get_db),
-    _:      models.AdminUser = Depends(get_current_admin)
+    _:      dict = Depends(get_current_admin)
 ):
     """
     Admin views full details of one specific application,
     including uploaded documents.
     """
-    application = db.query(models.MerchantApplication)\
-                    .filter(models.MerchantApplication.id == app_id)\
-                    .first()
-
+    application = get_application_by_id(app_id)
     if not application:
         raise HTTPException(status_code=404, detail="Application not found")
-
     return application
 
 
@@ -86,25 +63,13 @@ def get_application_detail(
 def update_application_status(
     app_id:      int,
     update_data: schemas.StatusUpdateRequest,
-    db:          Session          = Depends(get_db),
-    _:           models.AdminUser = Depends(get_current_admin)
+    _:           dict = Depends(get_current_admin)
 ):
     """
     Admin updates the status of an application (e.g., pending → approved)
     and optionally adds remarks/comments.
     """
-    application = db.query(models.MerchantApplication)\
-                    .filter(models.MerchantApplication.id == app_id)\
-                    .first()
-
-    if not application:
+    try:
+        return update_application(app_id, update_data.status, update_data.remarks)
+    except ValueError:
         raise HTTPException(status_code=404, detail="Application not found")
-
-    # Apply the status update
-    application.status  = update_data.status
-    application.remarks = update_data.remarks
-
-    db.commit()
-    db.refresh(application)
-
-    return application

@@ -8,7 +8,6 @@
 
 from pydantic import BaseModel, EmailStr, validator
 from typing import Optional, List
-from datetime import datetime
 from app.models import ApplicationStatus, BusinessType
 
 
@@ -71,10 +70,10 @@ class UserResponse(BaseModel):
     pan_number:     str
     gst_number:     str
     services:       str
-    created_at:     datetime
+    created_at:     str
 
     class Config:
-        from_attributes = True  # Allows building from SQLAlchemy model
+        from_attributes = True
 
 
 # ============================================================
@@ -99,7 +98,7 @@ class DocumentOut(BaseModel):
     doc_type:    str
     file_name:   str
     file_path:   str
-    uploaded_at: datetime
+    uploaded_at: str
 
     class Config:
         from_attributes = True
@@ -110,7 +109,7 @@ class ApplicationResponse(BaseModel):
     id:           int
     status:       str
     remarks:      Optional[str]
-    submitted_at: datetime
+    submitted_at: str
     merchant:     UserResponse
     documents:    List[DocumentOut]
 

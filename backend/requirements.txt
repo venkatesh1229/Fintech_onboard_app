@@ -6,8 +6,6 @@
 
 fastapi==0.115.0          # Web framework
 uvicorn[standard]==0.30.0 # ASGI server to run FastAPI
-sqlalchemy==2.0.35        # ORM for database models
-pymysql==1.1.1            # MySQL driver for SQLAlchemy
 pydantic[email]==2.9.2    # Data validation (schemas) — Python 3.13 compatible
 pydantic-settings==2.5.2  # Load .env settings
 passlib[bcrypt]==1.7.4    # Password hashing

@@ -6,10 +6,9 @@
 # POST /api/auth/admin/login → Admin login → returns JWT
 # ============================================================
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
-from app.database import get_db
-from app import models, schemas
+from fastapi import APIRouter, HTTPException, status
+from app import schemas
+from app.storage import get_user_by_email, get_user_by_mobile, get_admin_by_email, create_user
 from app.utils.hashing import hash_password, verify_password
 from app.auth import create_access_token
 
@@ -21,44 +20,30 @@ router = APIRouter()
 # POST /api/auth/register
 # ============================================================
 @router.post("/register", response_model=schemas.UserResponse, status_code=201)
-def register_merchant(user_data: schemas.UserCreate, db: Session = Depends(get_db)):
+def register_merchant(user_data: schemas.UserCreate):
     """
     Create a new merchant account.
-    
-    Steps:
-    1. Check email and mobile aren't already registered
-    2. Hash the password before saving
-    3. Save user to DB
     """
-    # Step 1: Check for existing email
-    if db.query(models.User).filter(models.User.email == user_data.email).first():
+    if get_user_by_email(user_data.email):
         raise HTTPException(status_code=400, detail="Email already registered")
 
-    # Check for existing mobile
-    if db.query(models.User).filter(models.User.mobile == user_data.mobile).first():
+    if get_user_by_mobile(user_data.mobile):
         raise HTTPException(status_code=400, detail="Mobile number already registered")
 
-    # Step 2: Hash the password — NEVER store plain text
     hashed_pw = hash_password(user_data.password)
+    user = create_user({
+        "business_name": user_data.business_name,
+        "contact_person": user_data.contact_person,
+        "mobile": user_data.mobile,
+        "email": user_data.email,
+        "business_type": user_data.business_type,
+        "pan_number": user_data.pan_number,
+        "gst_number": user_data.gst_number,
+        "services": user_data.services,
+        "hashed_password": hashed_pw,
+    })
 
-    # Step 3: Create the DB row
-    new_user = models.User(
-        business_name  = user_data.business_name,
-        contact_person = user_data.contact_person,
-        mobile         = user_data.mobile,
-        email          = user_data.email,
-        business_type  = user_data.business_type,
-        pan_number     = user_data.pan_number,
-        gst_number     = user_data.gst_number,
-        services       = ",".join(user_data.services),  # Store as CSV string
-        hashed_password= hashed_pw,
-    )
-
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)  # Reload the row to get auto-generated id, created_at, etc.
-
-    return new_user
+    return user
 
 
 # ============================================================
@@ -66,25 +51,19 @@ def register_merchant(user_data: schemas.UserCreate, db: Session = Depends(get_d
 # POST /api/auth/login
 # ============================================================
 @router.post("/login", response_model=schemas.TokenResponse)
-def login_merchant(credentials: schemas.LoginRequest, db: Session = Depends(get_db)):
+def login_merchant(credentials: schemas.LoginRequest):
     """
     Authenticate a merchant and return a JWT access token.
-    
-    The token encodes the user's email and role ("merchant").
     """
-    # Find user by email
-    user = db.query(models.User).filter(models.User.email == credentials.email).first()
+    user = get_user_by_email(credentials.email)
 
-    # Verify password (always verify even if user not found to avoid timing attacks)
-    if not user or not verify_password(credentials.password, user.hashed_password):
+    if not user or not verify_password(credentials.password, user["hashed_password"]):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password"
         )
 
-    # Generate JWT token
-    token = create_access_token({"sub": user.email, "role": "merchant"})
-
+    token = create_access_token({"sub": user["email"], "role": "merchant"})
     return {"access_token": token, "token_type": "bearer", "role": "merchant"}
 
 
@@ -93,18 +72,17 @@ def login_merchant(credentials: schemas.LoginRequest, db: Session = Depends(get_
 # POST /api/auth/admin/login
 # ============================================================
 @router.post("/admin/login", response_model=schemas.TokenResponse)
-def login_admin(credentials: schemas.LoginRequest, db: Session = Depends(get_db)):
+def login_admin(credentials: schemas.LoginRequest):
     """
     Authenticate an admin user and return a JWT with role="admin".
     """
-    admin = db.query(models.AdminUser).filter(models.AdminUser.email == credentials.email).first()
+    admin = get_admin_by_email(credentials.email)
 
-    if not admin or not verify_password(credentials.password, admin.hashed_password):
+    if not admin or not verify_password(credentials.password, admin["hashed_password"]):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid admin credentials"
         )
 
-    token = create_access_token({"sub": admin.email, "role": "admin"})
-
+    token = create_access_token({"sub": admin["email"], "role": "admin"})
     return {"access_token": token, "token_type": "bearer", "role": "admin"}

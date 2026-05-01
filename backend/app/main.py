@@ -9,10 +9,10 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from app.middleware.cors import add_cors_middleware
 from app.routes import auth_routes, merchant_routes, admin_routes, application_routes, upload_routes
-from app.database import engine, Base
+from app.storage import ensure_db
 
-# ----- Create all database tables on startup -----
-Base.metadata.create_all(bind=engine)
+# ----- Create local JSON storage and seed a default admin if needed -----
+ensure_db()
 
 # ----- Initialize FastAPI app -----
 app = FastAPI(
