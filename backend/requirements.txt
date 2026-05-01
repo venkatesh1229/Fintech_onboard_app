@@ -4,10 +4,10 @@
 # Install all with: pip install -r requirements.txt
 # ============================================================
 
-fastapi==0.115.0          # Web framework
-uvicorn[standard]==0.30.0 # ASGI server to run FastAPI
-pydantic[email]==2.7.0    # Data validation (schemas) — has pre-built wheels
-pydantic-settings==2.5.2  # Load .env settings
+fastapi==0.104.1          # Web framework (compatible version)
+uvicorn[standard]==0.24.0 # ASGI server to run FastAPI
+pydantic[email]==2.4.2    # Data validation (schemas) — has pre-built wheels
+pydantic-settings==2.0.3  # Load .env settings
 passlib[bcrypt]==1.7.4    # Password hashing
 python-jose[cryptography]==3.3.0  # JWT tokens
 python-multipart==0.0.12  # Required for file uploads
