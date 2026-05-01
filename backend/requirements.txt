@@ -6,7 +6,7 @@
 
 fastapi==0.115.0          # Web framework
 uvicorn[standard]==0.30.0 # ASGI server to run FastAPI
-pydantic[email]==2.9.2    # Data validation (schemas) — Python 3.13 compatible
+pydantic[email]==2.7.0    # Data validation (schemas) — has pre-built wheels
 pydantic-settings==2.5.2  # Load .env settings
 passlib[bcrypt]==1.7.4    # Password hashing
 python-jose[cryptography]==3.3.0  # JWT tokens
