@@ -8,7 +8,6 @@ services:
     startCommand: python run.py
     autoDeploy: true
     envVars:
-      - key: DATABASE_URL
       - key: SECRET_KEY
       - key: APP_HOST
         value: "0.0.0.0"
