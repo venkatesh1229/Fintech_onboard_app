@@ -2,6 +2,7 @@ services:
   - type: web
     name: fintech-onboarding-backend
     env: python
+    pythonVersion: 3.13.12
     region: oregon
     plan: free
     buildCommand: pip install -r requirements.txt
